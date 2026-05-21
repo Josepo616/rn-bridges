@@ -7,6 +7,10 @@
     return result;
 }
 
+- (NSString *)greet:(NSString *)name {
+    return [NSString stringWithFormat:@"Hello from Swift wrapper, %@!", name];
+}
+
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
     (const facebook::react::ObjCTurboModule::InitParams &)params
 {

@@ -1,12 +1,12 @@
 import { Text, View, StyleSheet } from 'react-native';
-import { multiply } from 'rn-bridge';
+import { greet } from 'rn-bridge';
 
-const result = multiply(3, 7);
+const greeting = greet('Jose');
 
 export default function App() {
   return (
     <View style={styles.container}>
-      <Text>Result: {result}</Text>
+      <Text>{greeting}</Text>
     </View>
   );
 }
