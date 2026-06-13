@@ -16,7 +16,7 @@ import UIKit
     super.init()
   }
 
-  @objc public func greet(name: String) -> String {
+  @objc public func greet(_ name: String) -> String {
     return "Hello, \(name)!"
   }
 
