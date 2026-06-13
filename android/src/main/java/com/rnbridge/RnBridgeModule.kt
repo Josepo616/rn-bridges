@@ -16,7 +16,7 @@ class RnBridgeModule(reactContext: ReactApplicationContext) :
   override fun triggerHaptic(type: String): Unit {
     // TODO: Implement haptic feedback for Android
     // For now, just log it
-    android.util.log.i("RnBridge", "Haptic triggered: $type")
+    android.util.Log.i("RnBridge", "Haptic triggered: $type")
   }
 
   companion object {
