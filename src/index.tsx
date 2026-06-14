@@ -7,3 +7,15 @@ export function multiply(a: number, b: number): number {
 export function greet(name: string): string {
   return RnBridge.greet(name);
 }
+
+export type HapticType =
+  | 'light'
+  | 'medium'
+  | 'heavy'
+  | 'success'
+  | 'warning'
+  | 'error';
+
+export function triggerHaptic(type: HapticType): void {
+  RnBridge.triggerHaptic(type);
+}

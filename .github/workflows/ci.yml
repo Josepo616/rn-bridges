@@ -158,6 +158,9 @@ jobs:
         if: env.turbo_cache_hit != 1 && steps.cocoapods-cache.outputs.cache-hit != 'true'
         run: |
           cd example
+          rm -rf vendor/bundle  # Remove outdated bundled gems
+          gem update --system
+          gem install bundler
           bundle install
           bundle exec pod repo update --verbose
           bundle exec pod install --project-directory=ios

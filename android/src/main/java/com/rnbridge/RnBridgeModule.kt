@@ -9,6 +9,16 @@ class RnBridgeModule(reactContext: ReactApplicationContext) :
     return a * b
   }
 
+  override fun greet(name: String): String {
+    return "Hello, $name!"
+  }
+
+  override fun triggerHaptic(type: String): Unit {
+    // TODO: Implement haptic feedback for Android
+    // For now, just log it
+    android.util.Log.i("RnBridge", "Haptic triggered: $type")
+  }
+
   companion object {
     const val NAME = NativeRnBridgeSpec.NAME
   }
