@@ -9,7 +9,7 @@
 }
 
 - (NSString *)greet: (NSString *)name {
-  return [[RnBridgeImpl shared] greetWithName:name];
+  return [[RnBridgeImpl shared] greet:name];
 }
 
 - (void)triggerHaptic:(NSString *)type {
