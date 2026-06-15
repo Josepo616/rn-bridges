@@ -9,6 +9,12 @@ import CoreData
 import Foundation
 import os
 
+struct HapticRecord: Identifiable {
+  let id = UUID()
+  let type: String
+  let timestamp: Date
+}
+
 @objc public class HapticStore: NSObject {
 
   @objc public static let shared = HapticStore()
@@ -103,6 +109,83 @@ import os
     }
   }
 
+  @objc public func getHistory(limit: Int) -> [[String: Any]] {
+    let request = NSFetchRequest<HapticEvent>(entityName: "HapticEvent")
+
+    // Most recent first
+    request.sortDescriptors = [
+      NSSortDescriptor(key: "timestamp", ascending: false)
+    ]
+
+    // 0 = no limits, any other value applies
+    if limit > 0 {
+      request.fetchLimit = limit
+    }
+
+    do {
+      let events = try context.fetch(request)
+      logger.debug("Fetched \(events.count) haptic events")
+
+      return events.map { event in
+        return [
+          "type": event.type,
+          // timestamp with epoch in milliseconds (what js understands easy)
+          "timestamp": event.timestamp.timeIntervalSince1970 * 1000,
+        ]
+      }
+    } catch {
+      logger.error("Fail to fetch history: \(error.localizedDescription)")
+      return []
+    }
+  }
+  
+  func allRecords() -> [HapticRecord] {
+    let request = NSFetchRequest<HapticEvent>(entityName: "HapticEvent")
+    request.sortDescriptors = [NSSortDescriptor(key: "timestamp", ascending: false)]
+    do {
+      let events = try context.fetch(request)
+      return events.map { HapticRecord(type: $0.type, timestamp: $0.timestamp) }
+    } catch {
+      logger.error("Failed to fetch records: \(error.localizedDescription)")
+      return []
+    }
+  }
+  
+  @objc public func getStats() -> [String: Any] {
+    let request = NSFetchRequest<HapticEvent>(entityName: "HapticEvent")
+    do {
+      let events = try context.fetch(request)
+      var byType: [String: Int] = [:]
+      for event in events {
+        byType[event.type, default: 0] += 1
+      }
+      logger.debug("Computed stats: \(events.count) total")
+      return [
+        "total": events.count,
+        "byType": byType
+      ]
+    } catch {
+      logger.error("Failed to compute stats: \(error.localizedDescription)")
+      return ["total": 0, "byType": [:]]
+    }
+  }
+
+  @objc public func clearHistory() -> Int {
+    let request = NSFetchRequest<HapticEvent>(entityName: "HapticEvent")
+    do {
+      let events = try context.fetch(request)
+      let count = events.count
+      for event in events {
+        context.delete(event)
+      }
+      try context.save()
+      logger.info("Cleared \(count) haptic events")
+      return count
+    } catch {
+      logger.error("Failed to clear history: \(error.localizedDescription)")
+      return 0
+    }
+  }
 }
 
 // MARK: Managed Object subclass
