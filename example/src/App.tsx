@@ -19,7 +19,7 @@ const HAPTIC_TYPES: HapticType[] = [
 ];
 
 export default function App() {
-  const [setHistory] = useState<HapticEvent[]>([]);
+  const [, setHistory] = useState<HapticEvent[]>([]);
 
   const handleHaptic = async (type: HapticType) => {
     await triggerHaptic(type);
