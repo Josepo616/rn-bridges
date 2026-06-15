@@ -1,6 +1,7 @@
 package com.rnbridge
 
 import com.facebook.react.bridge.ReactApplicationContext
+import com.facebook.react.bridge.Promise
 
 class RnBridgeModule(reactContext: ReactApplicationContext) :
   NativeRnBridgeSpec(reactContext) {
@@ -13,7 +14,7 @@ class RnBridgeModule(reactContext: ReactApplicationContext) :
     return "Hello, $name!"
   }
 
-  override fun triggerHaptic(type: String): Unit {
+  override fun triggerHaptic(type: String, promise: Promise): Unit {
     // TODO: Implement haptic feedback for Android
     // For now, just log it
     android.util.Log.i("RnBridge", "Haptic triggered: $type")
