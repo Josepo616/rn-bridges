@@ -1,4 +1,5 @@
 import RnBridge from './NativeRnBridge';
+import type { HapticEvent } from './NativeRnBridge';
 
 export function multiply(a: number, b: number): number {
   return RnBridge.multiply(a, b);
@@ -16,6 +17,16 @@ export type HapticType =
   | 'warning'
   | 'error';
 
-export function triggerHaptic(type: HapticType): void {
-  RnBridge.triggerHaptic(type);
+export function triggerHaptic(type: HapticType): Promise<void> {
+  return RnBridge.triggerHaptic(type);
 }
+
+export function getHapticHistory(limit: number = 0): HapticEvent[] {
+  return RnBridge.getHapticHistory(limit);
+}
+
+export function presentHapticHistory(): void {
+  RnBridge.presentHapticHistory();
+}
+
+export type { HapticEvent };
