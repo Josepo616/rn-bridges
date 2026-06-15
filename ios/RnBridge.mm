@@ -13,8 +13,15 @@
   return [[RnBridgeImpl shared] greet:name];
 }
 
-- (void)triggerHaptic:(NSString *)type {
-  [[RnBridgeImpl shared] triggerHapticWithType:type];
+- (void)triggerHaptic:(NSString *)type
+                resolve:(RCTPromiseResolveBlock)resolve
+                  reject:(RCTPromiseRejectBlock)reject {
+  [[RnBridgeImpl shared] triggerHapticWithType:type
+                                       resolve:^(id _Nullable result){
+    resolve(result);
+  } reject:^(NSString *code, NSString *message, NSError *error) {
+    reject(code, message, error);
+  }];
 }
 
 - (std::shared_ptr<facebook::react::TurboModule>)getTurboModule:
@@ -22,7 +29,15 @@
   return std::make_shared<facebook::react::NativeRnBridgeSpecJSI>(params);
 }
 
-+ (NSString *)moduleName {
+- (NSArray<NSDictionary *> *)getHapticHistory:(double)limit{
+  return [[RnBridgeImpl shared] getHapticHistoryWithLimit:(NSInteger)limit];
+}
+
+- (void)presentHapticHistory {
+  [[RnBridgeImpl shared] presentHapticHistory];
+}
+
++ (NSString *)moduleName { 
   return @"RnBridge";
 }
 
