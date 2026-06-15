@@ -1,4 +1,5 @@
 #import "RnBridge.h"
+#import "CoreData/CoreData.h"
 #import "RnBridge-swift.h"
 
 @implementation RnBridge
