@@ -8,10 +8,16 @@
 import Foundation
 import UIKit
 import SwiftUI
+import Network
 
 @objc public class RnBridgeImpl: NSObject {
 
   @objc public static let shared = RnBridgeImpl()
+  @objc public weak var networkDelegate: RnBridgeNetworkDelegate?
+  
+  private let monitor = NWPathMonitor()
+  private let monitorQueue = DispatchQueue(label: "com.ravn.rnbridge.network")
+  private var isMonitoring: Bool = false
 
   @objc public override init() {
     super.init()
@@ -101,5 +107,49 @@ import SwiftUI
       top = presented
     }
     return top
+  }
+  
+  // NetworkMonitor Functions
+  
+  @objc public func startMonitoring() {
+    guard !isMonitoring else { return }
+    isMonitoring = true
+    
+    monitor.pathUpdateHandler = { [weak self] path in
+      guard let self = self else { return }
+      self.networkDelegate?.sendNetworkChanged(self.serialize(path))
+    }
+    monitor.start(queue: monitorQueue)
+  }
+  
+  @objc public func stopMonitoring() {
+    guard isMonitoring else { return }
+    monitor.cancel()
+    isMonitoring = false
+  }
+  
+  @objc public func getCurrentNetworkStatus (
+  resolve: @escaping (Any?) -> Void,
+  reject: @escaping (String, String, Error?) -> Void
+  ) {
+    resolve(serialize(monitor.currentPath))
+  }
+  
+  private func serialize(_ path: NWPath) -> [String: Any] {
+    let type: String
+    
+    if path.usesInterfaceType(.wifi) {
+      type = "wifi"
+    } else if path.usesInterfaceType(.cellular) {
+      type = "cellular"
+    } else if path.status == .satisfied {
+      type = "other"
+    } else {
+      type = "none"
+    }
+    return [
+      "isConnected": path.status == .satisfied,
+      "type": type
+    ]
   }
 }
