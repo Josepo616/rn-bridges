@@ -1,6 +1,6 @@
 #import "RnBridge.h"
-#import "CoreData/CoreData.h"
-#import "RnBridge-swift.h"
+#import <CoreData/CoreData.h>
+#import "RnBridge-Swift.h"
 
 @implementation RnBridge
 
@@ -37,7 +37,28 @@
   [[RnBridgeImpl shared] presentHapticHistory];
 }
 
-+ (NSString *)moduleName { 
+- (instancetype)init {
+  if ( self = [super init]) {
+    [RnBridgeImpl shared].networkDelegate = self;
+    [[RnBridgeImpl shared] startMonitoring];
+  }
+  return self;
+}
+
+- (void)getCurrentNetworkStatus:(RCTPromiseResolveBlock)resolve
+                         reject:(RCTPromiseRejectBlock)reject {
+  [[RnBridgeImpl shared] getCurrentNetworkStatusWithResolve:^(id _Nullable result){
+    resolve(result);
+  } reject:^(NSString *code, NSString *message, NSError *error) {
+    reject(code, message, error);
+  }];
+}
+
+- (void)sendNetworkChanged:(NSDictionary *)status {
+  [self emitOnNetworkChanged:status];
+}
+
++ (NSString *)moduleName {
   return @"RnBridge";
 }
 
