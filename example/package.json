@@ -12,7 +12,7 @@
     "build:web": "vite build"
   },
   "dependencies": {
-    "react": "19.2.3",
+    "react": "19.2.6",
     "react-dom": "19.2.3",
     "react-native": "0.85.0",
     "react-native-web": "~0.21.1"
@@ -37,5 +37,6 @@
   },
   "engines": {
     "node": ">= 22.11.0"
-  }
+  },
+  "installConfig": {}
 }
