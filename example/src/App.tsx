@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Text, View, StyleSheet, Pressable, SafeAreaView } from 'react-native';
 import {
   greet,
@@ -7,6 +7,9 @@ import {
   type HapticType,
   type HapticEvent,
   presentHapticHistory,
+  getCurrentNetworkStatus,
+  subscribeToNetworkChanges,
+  type NetworkStatus,
 } from 'rn-bridge';
 
 const HAPTIC_TYPES: HapticType[] = [
@@ -20,6 +23,16 @@ const HAPTIC_TYPES: HapticType[] = [
 
 export default function App() {
   const [, setHistory] = useState<HapticEvent[]>([]);
+  const [network, setNetwork] = useState<NetworkStatus | null>(null);
+
+  useEffect(() => {
+    getCurrentNetworkStatus().then(setNetwork).catch(console.error);
+    const sub = subscribeToNetworkChanges((status) => {
+      console.log('Network changed:', status);
+      setNetwork(status);
+    });
+    return () => sub.remove();
+  }, []);
 
   const handleHaptic = async (type: HapticType) => {
     await triggerHaptic(type);
@@ -55,6 +68,20 @@ export default function App() {
         >
           <Text style={styles.buttonText}>View History</Text>
         </Pressable>
+
+        <View
+          style={[
+            styles.networkCard,
+            { backgroundColor: network?.isConnected ? '#E8F5E9' : '#FFEBEE' },
+          ]}
+        >
+          <Text style={styles.networkLabel}>Network</Text>
+          <Text style={styles.networkValue}>
+            {network
+              ? `${network.isConnected ? '🟢' : '🔴'} ${network.type}`
+              : '…'}
+          </Text>
+        </View>
       </View>
     </SafeAreaView>
   );
@@ -115,6 +142,19 @@ const styles = StyleSheet.create({
   buttonText: {
     color: '#FFF',
     fontWeight: '600',
+    textTransform: 'capitalize',
+  },
+  networkCard: {
+    padding: 16,
+    borderRadius: 12,
+    alignItems: 'center',
+    minWidth: 200,
+  },
+  networkLabel: { fontSize: 14, color: '#888' },
+  networkValue: {
+    fontSize: 20,
+    fontWeight: '600',
+    marginTop: 4,
     textTransform: 'capitalize',
   },
 });
