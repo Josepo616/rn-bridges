@@ -173,5 +173,12 @@
       "vite"
     ],
     "version": "0.62.0"
+  },
+  "resolutions": {
+    "react": "19.2.6",
+    "react-native": "0.85.0"
+  },
+  "dependenciesMeta": {
+    "react": {}
   }
 }
