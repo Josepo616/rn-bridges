@@ -1,5 +1,6 @@
 import RnBridge from './NativeRnBridge';
 import type { HapticEvent } from './NativeRnBridge';
+import type { NetworkStatus } from './NativeRnBridge';
 
 export function multiply(a: number, b: number): number {
   return RnBridge.multiply(a, b);
@@ -8,7 +9,6 @@ export function multiply(a: number, b: number): number {
 export function greet(name: string): string {
   return RnBridge.greet(name);
 }
-
 export type HapticType =
   | 'light'
   | 'medium'
@@ -29,4 +29,15 @@ export function presentHapticHistory(): void {
   RnBridge.presentHapticHistory();
 }
 
+export function getCurrentNetworkStatus(): Promise<NetworkStatus> {
+  return RnBridge.getCurrentNetworkStatus();
+}
+
+export function subscribeToNetworkChanges(
+  callback: (status: NetworkStatus) => void
+) {
+  return RnBridge.onNetworkChanged(callback);
+}
+
 export type { HapticEvent };
+export type { NetworkStatus };
