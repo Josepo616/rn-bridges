@@ -15,6 +15,10 @@ struct HapticRecord: Identifiable {
   let timestamp: Date
 }
 
+@objc public protocol RnBridgeNetworkDelegate: AnyObject {
+  func sendNetworkChanged(_ status: [String: Any])
+}
+
 @objc public class HapticStore: NSObject {
 
   @objc public static let shared = HapticStore()
@@ -191,7 +195,8 @@ struct HapticRecord: Identifiable {
 // MARK: Managed Object subclass
 
 @objc(HapticEvent)
-public class HapticEvent: NSManagedObject {
-  @NSManaged public var type: String
-  @NSManaged public var timestamp: Date
+class HapticEvent: NSManagedObject {
+  @NSManaged var type: String
+  @NSManaged var timestamp: Date
 }
+
