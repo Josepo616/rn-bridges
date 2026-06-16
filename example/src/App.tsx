@@ -1,14 +1,20 @@
 import { useEffect, useState } from 'react';
-import { Text, View, StyleSheet, Pressable, SafeAreaView } from 'react-native';
+import {
+  Text,
+  View,
+  StyleSheet,
+  Pressable,
+  SafeAreaView,
+  ScrollView,
+} from 'react-native';
+
 import {
   greet,
   triggerHaptic,
-  getHapticHistory,
-  type HapticType,
-  type HapticEvent,
-  presentHapticHistory,
   getCurrentNetworkStatus,
   subscribeToNetworkChanges,
+  presentHapticHistory,
+  type HapticType,
   type NetworkStatus,
 } from 'rn-bridge';
 
@@ -21,68 +27,92 @@ const HAPTIC_TYPES: HapticType[] = [
   'error',
 ];
 
+const HAPTIC_ICONS = {
+  light: '🤏',
+  medium: '👆',
+  heavy: '💥',
+  success: '✅',
+  warning: '⚠️',
+  error: '❌',
+};
+
 export default function App() {
-  const [, setHistory] = useState<HapticEvent[]>([]);
   const [network, setNetwork] = useState<NetworkStatus | null>(null);
 
   useEffect(() => {
-    getCurrentNetworkStatus().then(setNetwork).catch(console.error);
+    getCurrentNetworkStatus().then(setNetwork);
+
     const sub = subscribeToNetworkChanges((status) => {
-      console.log('Network changed:', status);
       setNetwork(status);
     });
+
     return () => sub.remove();
   }, []);
 
   const handleHaptic = async (type: HapticType) => {
     await triggerHaptic(type);
-    refreshHistory();
-  };
-
-  const refreshHistory = () => {
-    const events = getHapticHistory(20);
-    setHistory(events);
   };
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <View style={styles.container}>
-        <Text style={styles.title}>RnBridge Demo</Text>
-        <Text style={styles.greeting}>{greet('Ravn iOS Team')}</Text>
+      <ScrollView
+        contentContainerStyle={styles.content}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={styles.title}>RN Bridge</Text>
 
-        <View style={styles.grid}>
-          {HAPTIC_TYPES.map((type) => (
-            <Pressable
-              key={type}
-              style={styles.button}
-              onPress={() => handleHaptic(type)}
-            >
-              <Text style={styles.buttonText}>{type}</Text>
-            </Pressable>
-          ))}
+        <Text style={styles.subtitle}>{greet('Ravn iOS Team')}</Text>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Haptic Feedback</Text>
+
+          <View style={styles.grid}>
+            {HAPTIC_TYPES.map((type) => (
+              <Pressable
+                key={type}
+                style={({ pressed }) => [
+                  styles.hapticButton,
+                  pressed && styles.pressed,
+                ]}
+                onPress={() => handleHaptic(type)}
+              >
+                <Text style={styles.emoji}>{HAPTIC_ICONS[type]}</Text>
+
+                <Text style={styles.hapticText}>{type}</Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Network Status</Text>
+
+          <View style={styles.networkRow}>
+            <View
+              style={[
+                styles.statusDot,
+                {
+                  backgroundColor: network?.isConnected ? '#22C55E' : '#EF4444',
+                },
+              ]}
+            />
+
+            <Text style={styles.networkText}>
+              {network ? `${network.type}` : 'Checking network...'}
+            </Text>
+          </View>
         </View>
 
         <Pressable
-          style={[styles.button, styles.historyButton]}
-          onPress={() => presentHapticHistory()}
-        >
-          <Text style={styles.buttonText}>View History</Text>
-        </Pressable>
-
-        <View
-          style={[
-            styles.networkCard,
-            { backgroundColor: network?.isConnected ? '#E8F5E9' : '#FFEBEE' },
+          style={({ pressed }) => [
+            styles.historyButton,
+            pressed && styles.pressed,
           ]}
+          onPress={presentHapticHistory}
         >
-          <Text style={styles.networkLabel}>Network</Text>
-          <Text style={styles.networkValue}>
-            {network
-              ? `${network.isConnected ? '🟢' : '🔴'} ${network.type}`
-              : '…'}
-          </Text>
-        </View>
-      </View>
+          <Text style={styles.historyText}>View Haptic History</Text>
+        </Pressable>
+      </ScrollView>
     </SafeAreaView>
   );
 }
@@ -90,71 +120,100 @@ export default function App() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#111',
+    backgroundColor: '#0F172A',
   },
 
-  container: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
+  content: {
+    padding: 24,
+    paddingTop: 40,
   },
 
   title: {
-    fontSize: 30,
-    fontWeight: '700',
+    fontSize: 34,
+    fontWeight: '800',
     color: '#FFF',
-    marginBottom: 8,
   },
 
-  greeting: {
+  subtitle: {
     fontSize: 16,
-    color: '#AAA',
-    marginBottom: 28,
-    textAlign: 'center',
+    color: '#94A3B8',
+    marginTop: 8,
+    marginBottom: 32,
+  },
+
+  card: {
+    backgroundColor: '#1E293B',
+    borderRadius: 24,
+    padding: 20,
+    marginBottom: 20,
+  },
+
+  sectionTitle: {
+    color: '#FFF',
+    fontSize: 18,
+    fontWeight: '700',
+    marginBottom: 16,
   },
 
   grid: {
-    width: '100%',
-    maxWidth: 360,
     flexDirection: 'row',
     flexWrap: 'wrap',
-    justifyContent: 'center',
     gap: 12,
   },
 
-  button: {
-    backgroundColor: '#007AFF',
-    minWidth: 100,
-    paddingVertical: 14,
-    paddingHorizontal: 20,
-    borderRadius: 12,
+  hapticButton: {
+    flexGrow: 1,
+    minWidth: '30%',
+    backgroundColor: '#334155',
+    borderRadius: 18,
+    paddingVertical: 18,
     alignItems: 'center',
   },
 
-  historyButton: {
-    marginTop: 20,
-    width: '100%',
-    maxWidth: 336,
-    backgroundColor: '#34C759',
+  emoji: {
+    fontSize: 24,
+    marginBottom: 8,
   },
 
-  buttonText: {
+  hapticText: {
     color: '#FFF',
     fontWeight: '600',
     textTransform: 'capitalize',
   },
-  networkCard: {
-    padding: 16,
-    borderRadius: 12,
+
+  networkRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    minWidth: 200,
   },
-  networkLabel: { fontSize: 14, color: '#888' },
-  networkValue: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginTop: 4,
+
+  statusDot: {
+    width: 12,
+    height: 12,
+    borderRadius: 6,
+    marginRight: 10,
+  },
+
+  networkText: {
+    color: '#FFF',
+    fontSize: 16,
     textTransform: 'capitalize',
+  },
+
+  historyButton: {
+    backgroundColor: '#2563EB',
+    paddingVertical: 18,
+    borderRadius: 20,
+    alignItems: 'center',
+  },
+
+  historyText: {
+    color: '#FFF',
+    fontWeight: '700',
+    fontSize: 16,
+  },
+
+  pressed: {
+    opacity: 0.75,
+    transform: [{ scale: 0.97 }],
   },
 });
