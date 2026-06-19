@@ -54,6 +54,10 @@
   }];
 }
 
+- (void)presentNetworkDetails {
+  [[RnBridgeImpl shared] presentNetworkDetails];
+}
+
 - (void)sendNetworkChanged:(NSDictionary *)status {
   [self emitOnNetworkChanged:status];
 }
