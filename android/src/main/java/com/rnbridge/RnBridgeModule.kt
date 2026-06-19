@@ -46,6 +46,11 @@ class RnBridgeModule(reactContext: ReactApplicationContext) :
     promise.resolve(result)
   }
 
+  override fun presentNetworkDetails(): Unit {
+    // TODO: Present the network details UI for Android
+    android.util.Log.i("RnBridge", "presentNetworkDetails called")
+  }
+
   companion object {
     const val NAME = NativeRnBridgeSpec.NAME
   }
