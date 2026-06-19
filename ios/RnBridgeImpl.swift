@@ -6,15 +6,16 @@
 //
 
 import Foundation
-import UIKit
-import SwiftUI
 import Network
+import SwiftUI
+import UIKit
 
 @objc public class RnBridgeImpl: NSObject {
 
   @objc public static let shared = RnBridgeImpl()
   @objc public weak var networkDelegate: RnBridgeNetworkDelegate?
-  
+
+  private let networkViewModel = NetworkDetailsViewModel()
   private let monitor = NWPathMonitor()
   private let monitorQueue = DispatchQueue(label: "com.ravn.rnbridge.network")
   private var isMonitoring: Bool = false
@@ -80,7 +81,7 @@ import Network
   @objc public func getHapticHistory(limit: Int) -> [[String: Any]] {
     return HapticStore.shared.getHistory(limit: limit)
   }
-  
+
   @objc public func presentHapticHistory() {
     DispatchQueue.main.async {
       guard let topVC = Self.topViewController() else {
@@ -97,47 +98,56 @@ import Network
   }
 
   private static func topViewController() -> UIViewController? {
-    guard let scene = UIApplication.shared.connectedScenes
-            .first(where: { $0.activationState == .foregroundActive }) as? UIWindowScene else {
+    guard
+      let scene = UIApplication.shared.connectedScenes
+        .first(where: { $0.activationState == .foregroundActive })
+        as? UIWindowScene
+    else {
       return nil
     }
-    let window = scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first
+    let window =
+      scene.windows.first(where: { $0.isKeyWindow }) ?? scene.windows.first
     guard var top = window?.rootViewController else { return nil }
     while let presented = top.presentedViewController {
       top = presented
     }
     return top
   }
-  
+
   // NetworkMonitor Functions
-  
+
   @objc public func startMonitoring() {
     guard !isMonitoring else { return }
     isMonitoring = true
-    
+
     monitor.pathUpdateHandler = { [weak self] path in
       guard let self = self else { return }
-      self.networkDelegate?.sendNetworkChanged(self.serialize(path))
+      let status = self.serialize(path)
+      self.networkDelegate?.sendNetworkChanged(status)
+      
+      DispatchQueue.main.async {
+        self.networkViewModel.update(from: status)
+      }
     }
     monitor.start(queue: monitorQueue)
   }
-  
+
   @objc public func stopMonitoring() {
     guard isMonitoring else { return }
     monitor.cancel()
     isMonitoring = false
   }
-  
-  @objc public func getCurrentNetworkStatus (
-  resolve: @escaping (Any?) -> Void,
-  reject: @escaping (String, String, Error?) -> Void
+
+  @objc public func getCurrentNetworkStatus(
+    resolve: @escaping (Any?) -> Void,
+    reject: @escaping (String, String, Error?) -> Void
   ) {
     resolve(serialize(monitor.currentPath))
   }
-  
+
   private func serialize(_ path: NWPath) -> [String: Any] {
     let type: String
-    
+
     if path.usesInterfaceType(.wifi) {
       type = "wifi"
     } else if path.usesInterfaceType(.cellular) {
@@ -149,7 +159,32 @@ import Network
     }
     return [
       "isConnected": path.status == .satisfied,
-      "type": type
+      "type": type,
+      "isExpensive": path.isExpensive,
+      "isConstrained": path.isConstrained,
+      "supportsIPv4": path.supportsIPv4,
+      "supportsIPv6": path.supportsIPv6,
+      "supportsDNS": path.supportsDNS,
     ]
+  }
+  
+  @objc public func presentNetworkDetails() {
+    DispatchQueue.main.async {
+      // Sync the current state before open
+      self.networkViewModel.update(from: self.serialize(self.monitor.currentPath))
+
+      guard let topVC = Self.topViewController() else {
+        print("[RnBridge] No view controller to present network details")
+        return
+      }
+      let host = UIHostingController(
+        rootView: NetworkDetailsView(model: self.networkViewModel)
+      )
+      if let sheet = host.sheetPresentationController {
+        sheet.detents = [.medium(), .large()]
+        sheet.prefersGrabberVisible = true
+      }
+      topVC.present(host, animated: true)
+    }
   }
 }
