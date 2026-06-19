@@ -16,6 +16,7 @@ import {
   presentHapticHistory,
   type HapticType,
   type NetworkStatus,
+  presentNetworkDetails,
 } from 'rn-bridge';
 
 const HAPTIC_TYPES: HapticType[] = [
@@ -84,24 +85,20 @@ export default function App() {
           </View>
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Network Status</Text>
-
-          <View style={styles.networkRow}>
-            <View
-              style={[
-                styles.statusDot,
-                {
-                  backgroundColor: network?.isConnected ? '#22C55E' : '#EF4444',
-                },
-              ]}
-            />
-
-            <Text style={styles.networkText}>
-              {network ? `${network.type}` : 'Checking network...'}
-            </Text>
-          </View>
-        </View>
+        <Pressable
+          onPress={() => presentNetworkDetails()}
+          style={[
+            styles.card,
+            { backgroundColor: network?.isConnected ? '#E8F5E9' : '#FFEBEE' },
+          ]}
+        >
+          <Text style={styles.networkText}>Network — tap for details</Text>
+          <Text style={styles.networkText}>
+            {network
+              ? `${network.isConnected ? '🟢' : '🔴'} ${network.type}`
+              : '…'}
+          </Text>
+        </Pressable>
 
         <Pressable
           style={({ pressed }) => [
@@ -194,7 +191,7 @@ const styles = StyleSheet.create({
   },
 
   networkText: {
-    color: '#FFF',
+    color: '#010101',
     fontSize: 16,
     textTransform: 'capitalize',
   },
