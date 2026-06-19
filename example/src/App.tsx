@@ -1,23 +1,32 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import {
   Text,
   View,
   StyleSheet,
   Pressable,
   SafeAreaView,
-  ScrollView,
+  Animated,
 } from 'react-native';
-
 import {
   greet,
   triggerHaptic,
+  getHapticHistory,
+  type HapticType,
+  type HapticEvent,
+  presentHapticHistory,
   getCurrentNetworkStatus,
   subscribeToNetworkChanges,
-  presentHapticHistory,
-  type HapticType,
-  type NetworkStatus,
   presentNetworkDetails,
+  type NetworkStatus,
 } from 'rn-bridge';
+
+const RAVN = {
+  primary: '#161616',
+  onPrimary: '#FFFFFF',
+  secondary: '#ADB5BD',
+  gold: '#B7986A',
+  surface: '#1E1E1E',
+};
 
 const HAPTIC_TYPES: HapticType[] = [
   'light',
@@ -28,189 +37,202 @@ const HAPTIC_TYPES: HapticType[] = [
   'error',
 ];
 
-const HAPTIC_ICONS = {
-  light: '🤏',
-  medium: '👆',
-  heavy: '💥',
-  success: '✅',
-  warning: '⚠️',
-  error: '❌',
-};
-
 export default function App() {
+  const [, setHistory] = useState<HapticEvent[]>([]);
   const [network, setNetwork] = useState<NetworkStatus | null>(null);
 
+  const colorAnim = useRef(new Animated.Value(1)).current;
+
   useEffect(() => {
-    getCurrentNetworkStatus().then(setNetwork);
-
+    getCurrentNetworkStatus().then(setNetwork).catch(console.error);
     const sub = subscribeToNetworkChanges((status) => {
+      console.log('Network changed:', status);
       setNetwork(status);
+      colorAnim.setValue(0.4);
+      Animated.timing(colorAnim, {
+        toValue: 1,
+        duration: 350,
+        useNativeDriver: true,
+      }).start();
     });
-
     return () => sub.remove();
-  }, []);
+  }, [colorAnim]);
 
   const handleHaptic = async (type: HapticType) => {
     await triggerHaptic(type);
+    refreshHistory();
   };
+
+  const refreshHistory = () => {
+    setHistory(getHapticHistory(20));
+  };
+
+  const isUp = network?.isConnected ?? false;
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <ScrollView
-        contentContainerStyle={styles.content}
-        showsVerticalScrollIndicator={false}
-      >
-        <Text style={styles.title}>RN Bridge</Text>
+      <View style={styles.container}>
+        {/* Header */}
+        <View style={styles.header}>
+          <View style={styles.eyebrowRule} />
+          <Text style={styles.eyebrow}>RN BRIDGE · DEMO</Text>
+          <Text style={styles.title}>Native bridges,{'\n'}live.</Text>
+          <Text style={styles.greeting}>{greet('Ravn iOS Team')}</Text>
+        </View>
 
-        <Text style={styles.subtitle}>{greet('Ravn iOS Team')}</Text>
-
-        <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Haptic Feedback</Text>
-
-          <View style={styles.grid}>
-            {HAPTIC_TYPES.map((type) => (
-              <Pressable
-                key={type}
-                style={({ pressed }) => [
-                  styles.hapticButton,
-                  pressed && styles.pressed,
-                ]}
-                onPress={() => handleHaptic(type)}
-              >
-                <Text style={styles.emoji}>{HAPTIC_ICONS[type]}</Text>
-
-                <Text style={styles.hapticText}>{type}</Text>
-              </Pressable>
-            ))}
-          </View>
+        {/* Haptics */}
+        <Text style={styles.sectionLabel}>HAPTICS · JS → SWIFT</Text>
+        <View style={styles.grid}>
+          {HAPTIC_TYPES.map((type) => (
+            <Pressable
+              key={type}
+              style={({ pressed }) => [
+                styles.chip,
+                pressed && styles.chipPressed,
+              ]}
+              onPress={() => handleHaptic(type)}
+            >
+              <Text style={styles.chipText}>{type}</Text>
+            </Pressable>
+          ))}
         </View>
 
         <Pressable
-          onPress={() => presentNetworkDetails()}
-          style={[
-            styles.card,
-            { backgroundColor: network?.isConnected ? '#E8F5E9' : '#FFEBEE' },
+          style={({ pressed }) => [
+            styles.primaryBtn,
+            pressed && styles.primaryBtnPressed,
           ]}
+          onPress={() => presentHapticHistory()}
         >
-          <Text style={styles.networkText}>Network — tap for details</Text>
-          <Text style={styles.networkText}>
-            {network
-              ? `${network.isConnected ? '🟢' : '🔴'} ${network.type}`
-              : '…'}
-          </Text>
+          <Text style={styles.primaryBtnText}>VIEW HISTORY</Text>
         </Pressable>
 
-        <Pressable
-          style={({ pressed }) => [
-            styles.historyButton,
-            pressed && styles.pressed,
-          ]}
-          onPress={presentHapticHistory}
-        >
-          <Text style={styles.historyText}>View Haptic History</Text>
+        {/* Network */}
+        <Text style={styles.sectionLabel}>NETWORK · SWIFT → JS</Text>
+        <Pressable onPress={() => presentNetworkDetails()}>
+          <Animated.View style={[styles.networkCard, { opacity: colorAnim }]}>
+            <View style={styles.networkRow}>
+              <View
+                style={[
+                  styles.statusDot,
+                  { backgroundColor: isUp ? RAVN.gold : RAVN.secondary },
+                ]}
+              />
+              <Text style={styles.networkType}>
+                {network ? network.type.toUpperCase() : '…'}
+              </Text>
+              <Text style={styles.networkState}>
+                {network ? (isUp ? 'CONNECTED' : 'OFFLINE') : ''}
+              </Text>
+            </View>
+            <Text style={styles.networkHint}>TAP FOR DETAILS →</Text>
+          </Animated.View>
         </Pressable>
-      </ScrollView>
+      </View>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#0F172A',
-  },
+  safeArea: { flex: 1, backgroundColor: RAVN.primary },
+  container: { flex: 1, paddingHorizontal: 24, paddingTop: 16, gap: 28 },
 
-  content: {
-    padding: 24,
-    paddingTop: 40,
-  },
-
-  title: {
-    fontSize: 34,
-    fontWeight: '800',
-    color: '#FFF',
-  },
-
-  subtitle: {
-    fontSize: 16,
-    color: '#94A3B8',
-    marginTop: 8,
-    marginBottom: 32,
-  },
-
-  card: {
-    backgroundColor: '#1E293B',
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 20,
-  },
-
-  sectionTitle: {
-    color: '#FFF',
-    fontSize: 18,
-    fontWeight: '700',
-    marginBottom: 16,
-  },
-
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 12,
-  },
-
-  hapticButton: {
-    flexGrow: 1,
-    minWidth: '30%',
-    backgroundColor: '#334155',
-    borderRadius: 18,
-    paddingVertical: 18,
-    alignItems: 'center',
-  },
-
-  emoji: {
-    fontSize: 24,
+  // Header
+  header: { gap: 8 },
+  eyebrowRule: {
+    width: 40,
+    height: 2,
+    backgroundColor: RAVN.gold,
     marginBottom: 8,
   },
-
-  hapticText: {
-    color: '#FFF',
+  eyebrow: {
+    color: RAVN.gold,
+    fontSize: 12,
     fontWeight: '600',
-    textTransform: 'capitalize',
+    letterSpacing: 2,
+  },
+  title: {
+    color: RAVN.onPrimary,
+    fontSize: 40,
+    fontWeight: '800',
+    lineHeight: 44,
+    marginTop: 4,
+  },
+  greeting: { color: RAVN.secondary, fontSize: 15, marginTop: 4 },
+
+  // Section labels
+  sectionLabel: {
+    color: RAVN.gold,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 2,
   },
 
-  networkRow: {
-    flexDirection: 'row',
+  // Haptic chips
+  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: -16 },
+  chip: {
+    borderWidth: 1,
+    borderColor: RAVN.secondary,
+    paddingVertical: 12,
+    paddingHorizontal: 18,
+    borderRadius: 4,
+    minWidth: 96,
     alignItems: 'center',
   },
-
-  statusDot: {
-    width: 12,
-    height: 12,
-    borderRadius: 6,
-    marginRight: 10,
+  chipPressed: { backgroundColor: RAVN.gold, borderColor: RAVN.gold },
+  chipText: {
+    color: RAVN.onPrimary,
+    fontWeight: '600',
+    fontSize: 13,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
 
-  networkText: {
-    color: '#010101',
-    fontSize: 16,
-    textTransform: 'capitalize',
-  },
-
-  historyButton: {
-    backgroundColor: '#2563EB',
-    paddingVertical: 18,
-    borderRadius: 20,
+  // Primary button (white on dark, Ravn CTA)
+  primaryBtn: {
+    backgroundColor: RAVN.onPrimary,
+    height: 52,
+    borderRadius: 8,
     alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: -16,
+  },
+  primaryBtnPressed: { opacity: 0.85 },
+  primaryBtnText: {
+    color: RAVN.primary,
+    fontWeight: '600',
+    letterSpacing: 2,
+    fontSize: 13,
   },
 
-  historyText: {
-    color: '#FFF',
-    fontWeight: '700',
-    fontSize: 16,
+  // Network card
+  networkCard: {
+    borderWidth: 1,
+    borderColor: RAVN.secondary,
+    borderRadius: 4,
+    padding: 20,
+    gap: 14,
+    marginTop: -16,
   },
-
-  pressed: {
-    opacity: 0.75,
-    transform: [{ scale: 0.97 }],
+  networkRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  statusDot: { width: 12, height: 12, borderRadius: 6 },
+  networkType: {
+    color: RAVN.onPrimary,
+    fontSize: 20,
+    fontWeight: '800',
+    letterSpacing: 1,
+  },
+  networkState: {
+    color: RAVN.secondary,
+    fontSize: 12,
+    fontWeight: '600',
+    letterSpacing: 1.5,
+    marginLeft: 'auto',
+  },
+  networkHint: {
+    color: RAVN.gold,
+    fontSize: 11,
+    fontWeight: '600',
+    letterSpacing: 1.5,
   },
 });
