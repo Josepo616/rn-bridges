@@ -12,6 +12,11 @@ export type HapticEvent = {
 export interface NetworkStatus {
   isConnected: boolean;
   type: string; // 'wifi' | 'cellular' | 'other' | 'none'
+  isExpensive: boolean;
+  isConstrained: boolean;
+  supportsIPv4: boolean;
+  supportsIPv6: boolean;
+  supportsDNS: boolean;
 }
 
 export interface Spec extends TurboModule {
@@ -22,6 +27,7 @@ export interface Spec extends TurboModule {
   presentHapticHistory(): void;
   getCurrentNetworkStatus(): Promise<NetworkStatus>;
   readonly onNetworkChanged: CodegenTypes.EventEmitter<NetworkStatus>;
+  presentNetworkDetails(): void;
 }
 
 export default TurboModuleRegistry.getEnforcing<Spec>('RnBridge');
