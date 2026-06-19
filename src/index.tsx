@@ -39,5 +39,9 @@ export function subscribeToNetworkChanges(
   return RnBridge.onNetworkChanged(callback);
 }
 
+export function presentNetworkDetails(): void {
+  RnBridge.presentNetworkDetails();
+}
+
 export type { HapticEvent };
 export type { NetworkStatus };
